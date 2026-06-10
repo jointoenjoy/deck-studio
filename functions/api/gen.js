@@ -53,7 +53,7 @@ export async function onRequestPost(context) {
   const parts = [{ text: imgNote + '產業對象：' + indName + '\n這頁想說的重點：\n' + intent }];
   if (hasImg) {
     const m = image.match(/^data:(.*?);base64,(.*)$/);
-    if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
+    if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
   }
 
   const reqModel = (typeof body.model === 'string' && /^(gemini|gemma)[\w.\-]*$/.test(body.model)) ? body.model : '';
