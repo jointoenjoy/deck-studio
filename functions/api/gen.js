@@ -54,7 +54,8 @@ export async function onRequestPost(context) {
     if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
   }
 
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const reqModel = (typeof body.model === 'string' && /^(gemini|gemma)[\w.\-]*$/.test(body.model)) ? body.model : '';
+  const model = reqModel || env.GEMINI_MODEL || 'gemini-2.5-flash';
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
     model + ':generateContent?key=' + env.GEMINI_API_KEY;
 
@@ -95,15 +96,29 @@ export async function onRequestPost(context) {
   const u = data.usageMetadata || {};
   return json({
     fields: obj,
+    model: model,
     inTok: u.promptTokenCount || 0,
     outTok: u.candidatesTokenCount || 0,
   });
 }
 
-// 診斷用：列出這把金鑰目前可用、且支援生成的模型（只回模型名，不含金鑰）
+// 診斷用：列出可用模型（GET /api/gen）；?selftest=1 會實際生成一次自我驗證（只回模型名與測試結果，不含金鑰）
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { request, env } = context;
   if (!env.GEMINI_API_KEY) return json({ error: '未設定 GEMINI_API_KEY' }, 500);
+  const url = new URL(request.url);
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  if (url.searchParams.get('selftest')) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + env.GEMINI_API_KEY, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: '請回一個 JSON 物件：{"ok":true}' }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 256, thinkingConfig: { thinkingBudget: 0 } } }),
+      });
+      const j = await r.json();
+      const txt = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).map((p) => p.text || '').join('');
+      return json({ selftest: true, model, httpStatus: r.status, ok: r.ok, sample: txt.slice(0, 120), err: r.ok ? null : (j.error && j.error.message) });
+    } catch (e) { return json({ selftest: true, model, error: String(e).slice(0, 200) }, 502); }
+  }
   try {
     const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + env.GEMINI_API_KEY);
     const data = await resp.json();
