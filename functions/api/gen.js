@@ -48,8 +48,10 @@ export async function onRequestPost(context) {
     '每個欄位填入精煉、有力、符合練息場調性的繁體中文（數字類欄位給具體數字或百分比）。' +
     '標題短促有記憶點，說明文字一句話講清楚，不要空話。';
 
-  const parts = [{ text: '產業對象：' + indName + '\n這頁想說的重點：\n' + intent }];
-  if (image && image.startsWith('data:')) {
+  const hasImg = !!(image && image.startsWith('data:'));
+  const imgNote = hasImg ? '【重要】使用者附上了一張圖片，請仔細閱讀圖片中的文字與視覺內容，作為這頁文案的主要依據。\n' : '';
+  const parts = [{ text: imgNote + '產業對象：' + indName + '\n這頁想說的重點：\n' + intent }];
+  if (hasImg) {
     const m = image.match(/^data:(.*?);base64,(.*)$/);
     if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
   }
@@ -97,6 +99,7 @@ export async function onRequestPost(context) {
   return json({
     fields: obj,
     model: model,
+    sawImage: hasImg,
     inTok: u.promptTokenCount || 0,
     outTok: u.candidatesTokenCount || 0,
   });
