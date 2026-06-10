@@ -44,6 +44,7 @@ export async function onRequestPost(context) {
   const TPL_DESC = {
     cover: '封面／標題頁（開場用）',
     bigstat: '震撼數據頁，凸顯單一關鍵數字（僅在內容有明確、真實的數據時才選）',
+    barchart: '長條圖，把 2-5 筆可比較的數據用橫條圖呈現（適合圖表類圖片、或多筆數字比較；數值請忠實讀自圖片或描述，不要捏造）',
     painpoint3: '痛點三欄，並列三個問題或重點',
     service: '服務卡，介紹三個服務／方案／項目',
     step: '流程頁，三個步驟',
@@ -73,7 +74,7 @@ export async function onRequestPost(context) {
   }
 
   const hasImg = !!(image && image.startsWith('data:'));
-  const imgNote = hasImg ? '【重要】使用者附上了一張圖片，請仔細閱讀圖片中的文字與視覺內容，作為這頁文案的主要依據。\n' : '';
+  const imgNote = hasImg ? '【重要】使用者附上了一張圖片。請仔細閱讀圖片中的文字與視覺內容，並【結合下方使用者的文字描述】，綜合成這一頁簡報的文案——兩者都要考慮，不要只看其中一個。\n' : '';
   const parts = [{ text: imgNote + '產業對象：' + indName + '\n這頁想說的重點：\n' + intent }];
   if (hasImg) {
     const m = image.match(/^data:(.*?);base64,(.*)$/);
