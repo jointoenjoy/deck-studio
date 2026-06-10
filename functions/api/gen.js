@@ -79,6 +79,7 @@ export async function onRequestPost(context) {
     let msg = '';
     try { const j = await resp.json(); msg = (j.error && j.error.message) || JSON.stringify(j); }
     catch { msg = await resp.text(); }
+    console.log('GEMINI_FAIL', resp.status, String(msg).slice(0, 300));
     return json({ error: 'Gemini ' + resp.status + '：' + String(msg).slice(0, 200) }, 502);
   }
 
