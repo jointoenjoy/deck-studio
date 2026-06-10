@@ -1,0 +1,8 @@
+name = "deck-studio"
+compatibility_date = "2026-06-05"
+pages_build_output_dir = "."
+
+# 簡報雲端永久保存用的 KV 儲存空間
+[[kv_namespaces]]
+binding = "DECKS"
+id = "06369fcc93444fc9881be8706ef28092"
