@@ -54,14 +54,14 @@ export async function onRequestPost(context) {
     if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
   }
 
-  const model = env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
     model + ':generateContent?key=' + env.GEMINI_API_KEY;
 
   const payload = {
     systemInstruction: { parts: [{ text: sys }] },
     contents: [{ role: 'user', parts }],
-    generationConfig: { responseMimeType: 'application/json', temperature: 0.7, maxOutputTokens: 1024 },
+    generationConfig: { responseMimeType: 'application/json', temperature: 0.7, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
   };
 
   let resp;
@@ -98,4 +98,20 @@ export async function onRequestPost(context) {
     inTok: u.promptTokenCount || 0,
     outTok: u.candidatesTokenCount || 0,
   });
+}
+
+// 診斷用：列出這把金鑰目前可用、且支援生成的模型（只回模型名，不含金鑰）
+export async function onRequestGet(context) {
+  const { env } = context;
+  if (!env.GEMINI_API_KEY) return json({ error: '未設定 GEMINI_API_KEY' }, 500);
+  try {
+    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + env.GEMINI_API_KEY);
+    const data = await resp.json();
+    const models = (data.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map((m) => String(m.name).replace('models/', ''));
+    return json({ available: models });
+  } catch (e) {
+    return json({ error: String(e).slice(0, 200) }, 502);
+  }
 }
